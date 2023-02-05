@@ -20,8 +20,8 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtQuick.Layouts 1.3
-import Vedder.vesc.utility 1.0
 
+import Vedder.vesc.utility 1.0
 import Vedder.vesc.commands 1.0
 import Vedder.vesc.configparams 1.0
 
@@ -38,6 +38,8 @@ Item {
     property Commands mCommands: VescIf.commands()
     property ConfigParams mMcConf: VescIf.mcConfig()
     property ConfigParams mCustomConf: VescIf.customConfig(0)
+
+    property var dialogParent: ApplicationWindow.overlay
     
     Component.onCompleted: {
 //        params.addEditorCustom("pid_mode", 0)
@@ -182,107 +184,376 @@ Item {
     }
 
     ColumnLayout {
-        id: gaugeColumn
+        id: root
         anchors.fill: parent
-        
-        ScrollView {
+    
+
+        TabBar {
+            id: tabBar
+            currentIndex: 0
             Layout.fillWidth: true
-            Layout.fillHeight: true
             clip: true
-            
-            ColumnLayout {
-                Text {
-                    id: header0
-                    color: Utility.getAppHexColor("lightText")
-                    font.family: "DejaVu Sans Mono"
-                    Layout.margins: 0
-                    Layout.leftMargin: 0
-                    Layout.fillWidth: true
-                    text: "Float App State"
-                    font.underline: true
-                    font.weight: Font.Black
-                    font.pointSize: 14
-                }
-                Text {
-                    id: rt_state
-                    color: Utility.getAppHexColor("lightText")
-                    font.family: "DejaVu Sans Mono"
-                    Layout.margins: 0
-                    Layout.leftMargin: 5
-                    Layout.preferredWidth: parent.width/3
-                    text: "Waiting for RT Data"
-                }
-                Text {
-                    id: header1
-                    color: Utility.getAppHexColor("lightText")
-                    font.family: "DejaVu Sans Mono"
-                    Layout.margins: 0
-                    Layout.leftMargin: 0
-                    Layout.fillWidth: true
-                    text: "Float App RT Data"
-                    font.underline: true
-                    font.weight: Font.Black
-                    font.pointSize: 14
-                }
-                Text {
-                    id: rt_data
-                    color: Utility.getAppHexColor("lightText")
-                    font.family: "DejaVu Sans Mono"
-                    Layout.margins: 0
-                    Layout.leftMargin: 5
-                    Layout.preferredWidth: parent.width/3
-                    text: "-\n"
-                }
-                Text {
-                    id: header2
-                    color: Utility.getAppHexColor("lightText")
-                    font.family: "DejaVu Sans Mono"
-                    Layout.margins: 0
-                    Layout.leftMargin: 0
-                    Layout.fillWidth: true
-                    text: "Setpoints"
-                    font.underline: true
-                    font.weight: Font.Black
-                    font.pointSize: 14
-                }
-                Text {
-                    id: setpoints
-                    color: Utility.getAppHexColor("lightText")
-                    font.family: "DejaVu Sans Mono"
-                    Layout.margins: 0
-                    Layout.leftMargin: 5
-                    Layout.preferredWidth: parent.width/3
-                    text: "-\n"
-                }
-                Text {
-                    id: header3
-                    color: Utility.getAppHexColor("lightText")
-                    font.family: "DejaVu Sans Mono"
-                    Layout.margins: 0
-                    Layout.leftMargin: 0
-                    Layout.fillWidth: true
-                    text: "DEBUG"
-                    font.underline: true
-                    font.weight: Font.Black
-                }
-                Text {
-                    id: debug
-                    color: Utility.getAppHexColor("lightText")
-                    font.family: "DejaVu Sans Mono"
-                    Layout.margins: 0
-                    Layout.leftMargin: 5
-                    Layout.preferredWidth: parent.width/3
-                    text: "-"
+            enabled: true
+
+            background: Rectangle {
+                opacity: 1
+                color: {color = Utility.getAppHexColor("lightBackground")}
+            }
+            property int buttons: 3
+            property int buttonWidth: 120
+
+            Repeater {
+                model: ["RT Data", "Controls", "Profiles"]
+                TabButton {
+                    text: modelData
+                    onClicked:{
+                        stackLayout.currentIndex = index
+                    }
                 }
             }
-            
-            
-//            ParamList {
-//                id: params
-//                anchors.fill: parent
-//            }
         }
         
+        StackLayout {
+            id: stackLayout
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            // onCurrentIndexChanged: {tabBar.currentIndex = currentIndex
+
+            ColumnLayout { // RT Data Page
+                id: rtDataColumn
+                
+                ScrollView {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    
+                    ColumnLayout {
+                        Text {
+                            id: header0
+                            color: Utility.getAppHexColor("lightText")
+                            font.family: "DejaVu Sans Mono"
+                            Layout.margins: 0
+                            Layout.leftMargin: 0
+                            Layout.fillWidth: true
+                            text: "Float App State"
+                            font.underline: true
+                            font.weight: Font.Black
+                            font.pointSize: 14
+                        }
+                        Text {
+                            id: rt_state
+                            color: Utility.getAppHexColor("lightText")
+                            font.family: "DejaVu Sans Mono"
+                            Layout.margins: 0
+                            Layout.leftMargin: 5
+                            Layout.preferredWidth: parent.width/3
+                            text: "Waiting for RT Data"
+                        }
+                        Text {
+                            id: header1
+                            color: Utility.getAppHexColor("lightText")
+                            font.family: "DejaVu Sans Mono"
+                            Layout.margins: 0
+                            Layout.leftMargin: 0
+                            Layout.fillWidth: true
+                            text: "Float App RT Data"
+                            font.underline: true
+                            font.weight: Font.Black
+                            font.pointSize: 14
+                        }
+                        Text {
+                            id: rt_data
+                            color: Utility.getAppHexColor("lightText")
+                            font.family: "DejaVu Sans Mono"
+                            Layout.margins: 0
+                            Layout.leftMargin: 5
+                            Layout.preferredWidth: parent.width/3
+                            text: "-\n"
+                        }
+                        Text {
+                            id: header2
+                            color: Utility.getAppHexColor("lightText")
+                            font.family: "DejaVu Sans Mono"
+                            Layout.margins: 0
+                            Layout.leftMargin: 0
+                            Layout.fillWidth: true
+                            text: "Setpoints"
+                            font.underline: true
+                            font.weight: Font.Black
+                            font.pointSize: 14
+                        }
+                        Text {
+                            id: setpoints
+                            color: Utility.getAppHexColor("lightText")
+                            font.family: "DejaVu Sans Mono"
+                            Layout.margins: 0
+                            Layout.leftMargin: 5
+                            Layout.preferredWidth: parent.width/3
+                            text: "-\n"
+                        }
+                        Text {
+                            id: header3
+                            color: Utility.getAppHexColor("lightText")
+                            font.family: "DejaVu Sans Mono"
+                            Layout.margins: 0
+                            Layout.leftMargin: 0
+                            Layout.fillWidth: true
+                            text: "DEBUG"
+                            font.underline: true
+                            font.weight: Font.Black
+                        }
+                        Text {
+                            id: debug
+                            color: Utility.getAppHexColor("lightText")
+                            font.family: "DejaVu Sans Mono"
+                            Layout.margins: 0
+                            Layout.leftMargin: 5
+                            Layout.preferredWidth: parent.width/3
+                            text: "-"
+                        }
+                    }
+                }
+            }
+
+            ColumnLayout { // Controls Page
+                id: controlsColumn
+                Layout.fillWidth: true
+
+                // Movement controls
+                Text {
+                    id: movementControlsHeader
+                    color: Utility.getAppHexColor("lightText")
+                    font.family: "DejaVu Sans Mono"
+                    Layout.margins: 0
+                    Layout.leftMargin: 0
+                    Layout.fillWidth: true
+                    text: "Movement Controls"
+                    font.underline: true
+                    font.weight: Font.Black
+                    font.pointSize: 14
+                }
+                RowLayout {
+                    id: movementStrength
+                    Layout.fillWidth: true
+
+                    Text {
+                        id: movementStrengthLabel
+                        color: Utility.getAppHexColor("lightText")
+                        font.family: "DejaVu Sans Mono"
+                        text: "Strength:"
+                    }
+                    Slider {
+                        id: movementStrengthSlider
+                        from: 20
+                        value: 40
+                        to: 250
+                        stepSize: 1
+                    }
+                }
+                RowLayout {
+                    id: movementControls
+                    Layout.fillWidth: true
+                    Button {
+                        id: reverseButton
+                        text: "Reverse"
+                        Layout.fillWidth: true
+                        onClicked: {
+                            var buffer = new ArrayBuffer(6)
+                            var dv = new DataView(buffer)
+                            var ind = 0
+                            dv.setUint8(ind, 101); ind += 1; // Float Package
+                            dv.setUint8(ind, 7); ind += 1; // Command ID: RC Move
+                            dv.setUint8(ind, 0); ind += 1; // Direction
+                            dv.setUint8(ind, movementStrengthSlider.value); ind += 1; // Current
+                            dv.setUint8(ind, 5); ind += 1; // Time
+                            dv.setUint8(ind, movementStrengthSlider.value + 5); ind += 1; // Sum = time + current
+                            mCommands.sendCustomAppData(buffer)
+                        }
+                    }
+                    Button {
+                        id: forwardButton
+                        text: "Forward"
+                        Layout.fillWidth: true
+                        onClicked: {
+                            var buffer = new ArrayBuffer(6)
+                            var dv = new DataView(buffer)
+                            var ind = 0
+                            dv.setUint8(ind, 101); ind += 1; // Float Package
+                            dv.setUint8(ind, 7); ind += 1; // Command ID: RC Move
+                            dv.setUint8(ind, 1); ind += 1; // Direction
+                            dv.setUint8(ind, movementStrengthSlider.value); ind += 1; // Current
+                            dv.setUint8(ind, 5); ind += 1; // Time
+                            dv.setUint8(ind, movementStrengthSlider.value + 5); ind += 1; // Sum = time + current
+                            mCommands.sendCustomAppData(buffer)
+                        }
+                    }
+                }
+                
+                // Tilt controls
+                Text {
+                    id: tiltControlsHeader
+                    color: Utility.getAppHexColor("lightText")
+                    font.family: "DejaVu Sans Mono"
+                    Layout.margins: 0
+                    Layout.leftMargin: 0
+                    Layout.fillWidth: true
+                    text: "Tilt Controls (In Dev)"
+                    font.underline: true
+                    font.weight: Font.Black
+                    font.pointSize: 14
+                }
+
+                Slider {
+                    id: tiltSlider
+                    from: -1
+                    value: 0
+                    to: 1
+                    Layout.fillWidth: true
+                    
+                    onMoved: {
+                        // var chukData = chuck_data{
+                        //     "js_x": 0,
+                        //     "js_y": 0,
+                        //     "acc_x": 0,
+                        //     "acc_y": 0,
+                        //     "acc_z": 0,
+                        //     "bt_c": false,
+                        //     "bt_z": false
+                        // }
+                        // mCommands.setChukData(chukData)
+
+                        // VByteArray vb;
+                        // vb.vbAppendInt8(COMM_SET_CHUCK_DATA);
+                        // vb.vbAppendUint8(data.js_x);
+                        // vb.vbAppendUint8(data.js_y);
+                        // vb.vbAppendUint8(data.bt_c);
+                        // vb.vbAppendUint8(data.bt_z);
+                        // vb.vbAppendInt16(data.acc_x);
+                        // vb.vbAppendInt16(data.acc_y);
+                        // vb.vbAppendInt16(data.acc_z);
+                        // emitData(vb);
+
+                        //var buffer = new ArrayBuffer(11)
+                        //var dv = new DataView(buffer)
+                        //var ind = 0
+                        //dv.setInt8(ind, 35); ind += 1; // COMM_SET_CHUCK_DATA
+                        //dv.setUint8(ind, 0); ind += 1; // js_x
+                        //dv.setUint8(ind, 0); ind += 1; // js_y
+                        //dv.setUint8(ind, 0); ind += 1; // bt_c
+                        //dv.setUint8(ind, 0); ind += 1; // bt_z
+                        //dv.setInt16(ind, 0); ind += 2; // acc_x
+                        //dv.setInt16(ind, 0); ind += 2; // acc_y
+                        //dv.setInt16(ind, 0); ind += 2; // acc_z
+                        //mCommands.dataToSend(buffer)
+                    }
+                }
+            }
+
+            ColumnLayout { // Profiles Page
+                id: profilesColumn
+                
+                Button {
+                    id: tuneButtonMitch
+                    text: "Apply Mitch's Tune"
+                    Layout.fillWidth: true
+                    onClicked: {
+                        // mAppConf.updateParamDouble("imu_conf.accel_confidence_decay", 0.02)
+                        // mAppConf.updateParamDouble("imu_conf.mahony_kp", 2.3)
+                        // mCommands.setAppConfNoStore()
+
+                        // mCustomConf.updateParamFloat("float_version", 0)
+                        mCustomConf.updateParamDouble("kp", 20)
+                        mCustomConf.updateParamDouble("ki", 0)
+                        mCustomConf.updateParamDouble("kd", 0)
+                        mCustomConf.updateParamDouble("kp2", 1.3)
+                        mCustomConf.updateParamDouble("mahony_kp", 2.3)
+                        // mCustomConf.updateParamUInt16("hertz", 400)
+                        // mCustomConf.updateParamDouble(float "fault_pitch", 0)
+                        // mCustomConf.updateParamDouble(float "fault_roll", 0)
+                        // mCustomConf.updateParamDouble(float "fault_adc1", 0)
+                        // mCustomConf.updateParamDouble(float "fault_adc2", 0)
+                        // mCustomConf.updateParamDouble(uint16_t "fault_delay_pitch", 0)
+                        // mCustomConf.updateParamDouble(uint16_t "fault_delay_roll", 0)
+                        // mCustomConf.updateParamDouble(uint16_t "fault_delay_switch_half", 0)
+                        // mCustomConf.updateParamDouble(uint16_t "fault_delay_switch_full", 0)
+                        // mCustomConf.updateParamDouble(uint16_t "fault_adc_half_erpm", 0)
+                        // mCustomConf.updateParamDouble(bool "fault_is_dual_switch", 0)
+                        // mCustomConf.updateParamDouble(bool "fault_moving_fault_disabled", 0)
+                        // mCustomConf.updateParamDouble(bool "fault_darkride_enabled", 0)
+                        // mCustomConf.updateParamDouble(bool "fault_reversestop_enabled", 0)
+                        // mCustomConf.updateParamDouble(float "tiltback_duty_angle", 0)
+                        // mCustomConf.updateParamDouble(float "tiltback_duty_speed", 0)
+                        // mCustomConf.updateParamDouble(float "tiltback_duty", 0)
+                        // mCustomConf.updateParamDouble(float "tiltback_hv_angle", 0)
+                        // mCustomConf.updateParamDouble(float "tiltback_hv_speed", 0)
+                        // mCustomConf.updateParamDouble(float "tiltback_hv", 0)
+                        // mCustomConf.updateParamDouble(float "tiltback_lv_angle", 0)
+                        // mCustomConf.updateParamDouble(float "tiltback_lv_speed", 0)
+                        // mCustomConf.updateParamDouble(float "tiltback_lv", 0)
+                        // mCustomConf.updateParamDouble(float "tiltback_return_speed", 0)
+                        mCustomConf.updateParamDouble("tiltback_constant", 0)
+                        // mCustomConf.updateParamDouble(uint16_t "tiltback_constant_erpm", 0)
+                        mCustomConf.updateParamDouble("tiltback_variable", 0)
+                        // mCustomConf.updateParamDouble(float "tiltback_variable_max", 0)
+                        // mCustomConf.updateParamDouble(FLOAT_INPUTTILT_REMOTE_TYPE "inputtilt_remote_type", 0)
+                        // mCustomConf.updateParamDouble(float "inputtilt_speed", 0)
+                        // mCustomConf.updateParamDouble(float "inputtilt_angle_limit", 0)
+                        // mCustomConf.updateParamDouble(bool "inputtilt_invert_throttle", 0)
+                        // mCustomConf.updateParamDouble(float "inputtilt_deadband", 0)
+                        // mCustomConf.updateParamDouble(float "noseangling_speed", 0)
+                        // mCustomConf.updateParamDouble(float "startup_pitch_tolerance", 0)
+                        // mCustomConf.updateParamDouble(float "startup_roll_tolerance", 0)
+                        // mCustomConf.updateParamDouble(float "startup_speed", 0)
+                        // mCustomConf.updateParamDouble(float "startup_click_current", 0)
+                        // mCustomConf.updateParamDouble(bool "startup_softstart_enabled", 0)
+                        // mCustomConf.updateParamDouble(bool "startup_simplestart_enabled", 0)
+                        // mCustomConf.updateParamDouble(bool "startup_pushstart_enabled", 0)
+                        // mCustomConf.updateParamDouble(bool "startup_dirtylandings_enabled", 0)
+                        // mCustomConf.updateParamDouble(float "brake_current", 0)
+                        // mCustomConf.updateParamDouble(float "ki_limit", 0)
+                        // mCustomConf.updateParamDouble(float "booster_angle", 0)
+                        // mCustomConf.updateParamDouble(float "booster_ramp", 0)
+                        mCustomConf.updateParamDouble("booster_current", 0)
+                        // mCustomConf.updateParamDouble("torquetilt_start_current", 0)
+                        // mCustomConf.updateParamDouble("torquetilt_angle_limit", 0)
+                        // mCustomConf.updateParamDouble("torquetilt_on_speed", 0)
+                        // mCustomConf.updateParamDouble("torquetilt_off_speed", 0)
+                        mCustomConf.updateParamDouble("torquetilt_strength", 0)
+                        // mCustomConf.updateParamDouble("torquetilt_strength_regen", 0)
+                        mCustomConf.updateParamDouble("atr_strength_up", 0)
+                        mCustomConf.updateParamDouble("atr_strength_down", 0)
+                        mCustomConf.updateParamDouble("atr_torque_offset", 0)
+                        mCustomConf.updateParamDouble("atr_speed_boost", 0)
+                        mCustomConf.updateParamDouble("atr_angle_limit", 0)
+                        mCustomConf.updateParamDouble("atr_on_speed", 0)
+                        mCustomConf.updateParamDouble("atr_off_speed", 0)
+                        mCustomConf.updateParamDouble("atr_response_boost", 0)
+                        mCustomConf.updateParamDouble("atr_transition_boost", 0)
+                        mCustomConf.updateParamDouble("atr_filter", 0)
+                        mCustomConf.updateParamDouble("atr_amps_accel_ratio", 0)
+                        mCustomConf.updateParamDouble("atr_amps_decel_ratio", 0)
+                        mCustomConf.updateParamDouble("braketilt_strength", 0)
+                        // mCustomConf.updateParamDouble("braketilt_lingering", 0)
+                        mCustomConf.updateParamDouble("turntilt_strength", 0)
+                        // mCustomConf.updateParamDouble("turntilt_angle_limit", 0)
+                        // mCustomConf.updateParamDouble("turntilt_start_angle", 0)
+                        // mCustomConf.updateParamDouble(uint16_t "turntilt_start_erpm", 0)
+                        // mCustomConf.updateParamDouble(float "turntilt_speed", 0)
+                        // mCustomConf.updateParamDouble(uint16_t "turntilt_erpm_boost", 0)
+                        // mCustomConf.updateParamDouble(uint16_t "turntilt_erpm_boost_end", 0)
+                        // mCustomConf.updateParamDouble(int "turntilt_yaw_aggregate", 0)
+                        // mCustomConf.updateParamDouble(bool "is_buzzer_enabled", 0)
+                        mCommands.customConfigSet(0, mCustomConf)
+                    }
+                }
+                
+            }
+        }
+    }
+
+    
+
+
 //        RowLayout {
 //            Layout.fillWidth: true
 //            
@@ -313,5 +584,4 @@ Item {
 //                }
 //            }
 //        }
-    }
 }
