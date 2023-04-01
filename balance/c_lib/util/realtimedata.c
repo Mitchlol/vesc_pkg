@@ -19,6 +19,7 @@
  */
 
 #include "realtimedata.h"
+#include "../util/mathmacros.h"
 
 #include "vesc_c_if.h"
 
@@ -27,10 +28,6 @@
 // Can
 #define MAX_CAN_AGE		0.1
 #define MAX_CAN_DEVS	2
-
-// Mathses
-#define DEG2RAD_f(deg)		((deg) * (float)(M_PI / 180.0))
-#define RAD2DEG_f(rad) 		((rad) * (float)(180.0 / M_PI))
 
 void realtimedata_update(RealtimeData *data, balance_config *balance_conf) {
 
@@ -96,4 +93,8 @@ void realtimedata_update(RealtimeData *data, balance_config *balance_conf) {
 			data->switch_state = OFF;
 		}
 	}
+
+	// Calculate useful runtime vars
+	data->direction = SIGN(data->erpm);
+	data->torque_direction = data->direction == SIGN(data->motor_current) ? 1.0 : -1.0;
 }

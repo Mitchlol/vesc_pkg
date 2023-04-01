@@ -17,30 +17,19 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef REALTIMEDATA_H_
-#define REALTIMEDATA_H_
 
-#include "../conf/datatypes.h"
+#ifndef MATHMACROS_H_
+#define MATHMACROS_H_
 
-typedef enum {
-	OFF = 0,
-	HALF,
-	ON
-} SwitchState;
+#include <math.h>
 
-// Runtime values read from elsewhere
-typedef struct{
-	float pitch_angle, last_pitch_angle, roll_angle, abs_roll_angle, abs_roll_angle_sin, last_gyro_y;
-	float gyro[3];
-	float duty_cycle, abs_duty_cycle;
-	float erpm, abs_erpm, avg_erpm;
-	float motor_current;
-	float motor_position;
-	float adc1, adc2;
-	SwitchState switch_state;
-	float direction, torque_direction;
-} RealtimeData;
+// Return the sign of the argument. -1.0 if negative, 1.0 if zero or positive.
+#define SIGN(x)				(((x) < 0.0) ? -1.0 : 1.0)
 
-void realtimedata_update(RealtimeData *data, balance_config *balance_conf);
+// Mathses
+#define DEG2RAD_f(deg)		((deg) * (float)(M_PI / 180.0))
+#define RAD2DEG_f(rad) 		((rad) * (float)(180.0 / M_PI))
 
-#endif /* REALTIMEDATA_H_ */
+#define STEP_TOWARDS(value, target, stepsize)	(target >= value ? fminf(target, value+stepsize) : fmaxf(target, value-stepsize))
+
+#endif /* MATHMACROS_H_ */

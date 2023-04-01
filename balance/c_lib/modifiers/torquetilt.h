@@ -1,5 +1,5 @@
 /*
-    Copyright 2019 - 2023 Mitch Lustig
+    Copyright 2023 Mitch Lustig
 	Copyright 2022 Benjamin Vedder	benjamin@vedder.se
 
 	This file is part of the VESC firmware.

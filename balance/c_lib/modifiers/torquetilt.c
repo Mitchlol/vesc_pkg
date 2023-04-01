@@ -1,5 +1,5 @@
 /*
-    Copyright 2019 - 2023 Mitch Lustig
+    Copyright 2023 Mitch Lustig
 	Copyright 2022 Benjamin Vedder	benjamin@vedder.se
 
 	This file is part of the VESC firmware.
@@ -20,11 +20,9 @@
 #include "torquetilt.h"
 #include "../util/biquad.h"
 #include "../util/realtimedata.h"
+#include "../util/mathmacros.h"
 
 #include <math.h>
-
-// Return the sign of the argument. -1.0 if negative, 1.0 if zero or positive.
-#define SIGN(x)				(((x) < 0.0) ? -1.0 : 1.0)
 
 void torquetilt_configure(Torquetilt *torquetilt, balance_config *balance_conf){
 	torquetilt->on_step_size = balance_conf->torquetilt_on_speed / balance_conf->hertz;
@@ -66,13 +64,7 @@ float torquetilt_update(Torquetilt *torquetilt, RealtimeData *realtimedata, bala
 		step_size = torquetilt->on_step_size;
 	}
 
-	if (fabsf(torquetilt->target - torquetilt->interpolated) < step_size) {
-		torquetilt->interpolated = torquetilt->target;
-	} else if (torquetilt->target - torquetilt->interpolated > 0) {
-		torquetilt->interpolated += step_size;
-	} else {
-		torquetilt->interpolated -= step_size;
-	}
+	torquetilt->interpolated = STEP_TOWARDS(torquetilt->interpolated, torquetilt->target, step_size);
 
 	return torquetilt->interpolated;
 }

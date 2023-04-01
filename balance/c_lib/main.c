@@ -25,8 +25,11 @@
 #include "conf/confxml.h"
 #include "conf/buffer.h"
 #include "modifiers/torquetilt.h"
+#include "modifiers/turntilt.h"
+#include "modifiers/speedtilt.h"
 #include "util/biquad.h"
 #include "util/realtimedata.h"
+#include "util/mathmacros.h"
 
 #include <math.h>
 #include <string.h>
@@ -36,9 +39,6 @@ HEADER
 // Can
 #define MAX_CAN_AGE		0.1
 #define MAX_CAN_DEVS	2
-
-// Return the sign of the argument. -1.0 if negative, 1.0 if zero or positive.
-#define SIGN(x)				(((x) < 0.0) ? -1.0 : 1.0)
 
 // Data type (Value 5 was removed, and can be reused at a later date, but i wanted to preserve the current value's numbers for UIs)
 typedef enum {
@@ -74,7 +74,9 @@ typedef struct {
 	balance_config balance_conf;
 
 	// Modifiers
+	Turntilt turntilt;
 	Torquetilt torquetilt;
+	Speedtilt speedtilt;
 
 	// Data
 	RealtimeData realtimedata;
@@ -83,8 +85,6 @@ typedef struct {
 	float loop_time_seconds;
 	float startup_step_size;
 	float tiltback_duty_step_size, tiltback_hv_step_size, tiltback_lv_step_size, tiltback_return_step_size;
-	float turntilt_step_size;
-	float tiltback_variable, tiltback_variable_max_erpm, noseangling_step_size;
 
 	// Rumtime state values
 	BalanceState state;
@@ -92,8 +92,6 @@ typedef struct {
 	float last_proportional, abs_proportional;
 	float pid_value;
 	float setpoint, setpoint_target, setpoint_target_interpolated;
-	float noseangling_interpolated;
-	float turntilt_target, turntilt_interpolated;
 	SetpointAdjustmentType setpointAdjustmentType;
 	float yaw_proportional, yaw_integral, yaw_derivative, yaw_last_proportional, yaw_pid_value, yaw_setpoint;
 	float current_time, last_time, diff_time, loop_overshoot; // Seconds
@@ -125,10 +123,10 @@ static void configure(data *d) {
 	d->tiltback_hv_step_size = d->balance_conf.tiltback_hv_speed / d->balance_conf.hertz;
 	d->tiltback_lv_step_size = d->balance_conf.tiltback_lv_speed / d->balance_conf.hertz;
 	d->tiltback_return_step_size = d->balance_conf.tiltback_return_speed / d->balance_conf.hertz;
-	d->turntilt_step_size = d->balance_conf.turntilt_speed / d->balance_conf.hertz;
-	d->noseangling_step_size = d->balance_conf.noseangling_speed / d->balance_conf.hertz;
 
+	turntilt_configure(&d->turntilt, &d->balance_conf);
 	torquetilt_configure(&d->torquetilt, &d->balance_conf);
+	speedtilt_configure(&d->speedtilt, &d->balance_conf);
 
 
 	// Init Filters
@@ -150,14 +148,6 @@ static void configure(data *d) {
 		d->d_pt1_highpass_k =  dT / (RC + dT);
 	}
 
-	// Variable nose angle adjustment / tiltback (setting is per 1000erpm, convert to per erpm)
-	d->tiltback_variable = d->balance_conf.tiltback_variable / 1000;
-	if (d->tiltback_variable > 0) {
-		d->tiltback_variable_max_erpm = fabsf(d->balance_conf.tiltback_variable_max / d->tiltback_variable);
-	} else {
-		d->tiltback_variable_max_erpm = 100000;
-	}
-
 	// Reset loop time variables
 	d->last_time = 0.0;
 	d->filtered_loop_overshoot = 0.0;
@@ -176,10 +166,9 @@ static void reset_vars(data *d) {
 	d->setpoint = d->realtimedata.pitch_angle;
 	d->setpoint_target_interpolated = d->realtimedata.pitch_angle;
 	d->setpoint_target = 0;
-	d->noseangling_interpolated = 0;
+	turntilt_reset(&d->turntilt);
 	torquetilt_reset(&d->torquetilt);
-	d->turntilt_target = 0;
-	d->turntilt_interpolated = 0;
+	speedtilt_reset(&d->speedtilt);
 	d->setpointAdjustmentType = CENTERING;
 	d->yaw_setpoint = 0;
 	d->state = RUNNING;
@@ -315,75 +304,6 @@ static void calculate_setpoint_interpolated(data *d) {
 	}
 }
 
-static void apply_noseangling(data *d){
-	// Nose angle adjustment, add variable then constant tiltback
-	float noseangling_target = 0;
-	if (fabsf(d->realtimedata.erpm) > d->tiltback_variable_max_erpm) {
-		noseangling_target = fabsf(d->balance_conf.tiltback_variable_max) * SIGN(d->realtimedata.erpm);
-	} else {
-		noseangling_target = d->tiltback_variable * d->realtimedata.erpm;
-	}
-
-	if (d->realtimedata.erpm > d->balance_conf.tiltback_constant_erpm) {
-		noseangling_target += d->balance_conf.tiltback_constant;
-	} else if (d->realtimedata.erpm < -d->balance_conf.tiltback_constant_erpm){
-		noseangling_target += -d->balance_conf.tiltback_constant;
-	}
-
-	if (fabsf(noseangling_target - d->noseangling_interpolated) < d->noseangling_step_size) {
-		d->noseangling_interpolated = noseangling_target;
-	} else if (noseangling_target - d->noseangling_interpolated > 0) {
-		d->noseangling_interpolated += d->noseangling_step_size;
-	} else {
-		d->noseangling_interpolated -= d->noseangling_step_size;
-	}
-
-	d->setpoint += d->noseangling_interpolated;
-}
-
-static void apply_turntilt(data *d) {
-	// Calculate desired angle
-	d->turntilt_target = d->realtimedata.abs_roll_angle_sin * d->balance_conf.turntilt_strength;
-
-	// Apply cutzone
-	if (d->realtimedata.abs_roll_angle < d->balance_conf.turntilt_start_angle) {
-		d->turntilt_target = 0;
-	}
-
-	// Disable below erpm threshold otherwise add directionality
-	if (d->realtimedata.abs_erpm < d->balance_conf.turntilt_start_erpm) {
-		d->turntilt_target = 0;
-	} else {
-		d->turntilt_target *= SIGN(d->realtimedata.erpm);
-	}
-
-	// Apply speed scaling
-	if (d->realtimedata.abs_erpm < d->balance_conf.turntilt_erpm_boost_end) {
-		d->turntilt_target *= 1 + ((d->balance_conf.turntilt_erpm_boost / 100.0f) *
-				(d->realtimedata.abs_erpm / d->balance_conf.turntilt_erpm_boost_end));
-	} else {
-		d->turntilt_target *= 1 + (d->balance_conf.turntilt_erpm_boost / 100.0f);
-	}
-
-	// Limit angle to max angle
-	if (d->turntilt_target > 0) {
-		d->turntilt_target = fminf(d->turntilt_target, d->balance_conf.turntilt_angle_limit);
-	} else {
-		d->turntilt_target = fmaxf(d->turntilt_target, -d->balance_conf.turntilt_angle_limit);
-	}
-
-	// Move towards target limited by max speed
-	if (fabsf(d->turntilt_target - d->turntilt_interpolated) < d->turntilt_step_size) {
-		d->turntilt_interpolated = d->turntilt_target;
-	} else if (d->turntilt_target - d->turntilt_interpolated > 0) {
-		d->turntilt_interpolated += d->turntilt_step_size;
-	} else {
-		d->turntilt_interpolated -= d->turntilt_step_size;
-	}
-
-	d->setpoint += d->turntilt_interpolated;
-}
-
 static float apply_deadzone(data *d, float error){
 	if (d->balance_conf.deadzone == 0) {
 		return error;
@@ -505,9 +425,9 @@ static void balance_thd(void *arg) {
 			calculate_setpoint_target(d);
 			calculate_setpoint_interpolated(d);
 			d->setpoint = d->setpoint_target_interpolated;
-			apply_noseangling(d);
+			d->setpoint += speedtilt_update(&d->speedtilt, &d->realtimedata, &d->balance_conf);
+			d->setpoint += turntilt_update(&d->turntilt, &d->realtimedata, &d->balance_conf);
 			d->setpoint += torquetilt_update(&d->torquetilt, &d->realtimedata, &d->balance_conf);
-			apply_turntilt(d);
 
 			// Do PID maths
 			d->proportional = d->setpoint - d->realtimedata.pitch_angle;
@@ -519,7 +439,7 @@ static void balance_thd(void *arg) {
 			d->integral = d->integral + d->proportional;
 			d->derivative = d->realtimedata.last_pitch_angle - d->realtimedata.pitch_angle;
 
-			// Apply I term Filter
+			// Apply I term limit
 			if (d->balance_conf.ki_limit > 0 && fabsf(d->integral * d->balance_conf.ki) > d->balance_conf.ki_limit) {
 				d->integral = d->balance_conf.ki_limit / d->balance_conf.ki * SIGN(d->integral);
 			}
@@ -551,10 +471,10 @@ static void balance_thd(void *arg) {
 						(d->balance_conf.ki2 * d->integral2) + (d->balance_conf.kd2 * d->derivative2);
 			}
 
+			d->abs_proportional = fabsf(d->proportional);
 			d->last_proportional = d->proportional;
 
 			// Apply Booster
-			d->abs_proportional = fabsf(d->proportional);
 			if (d->abs_proportional > d->balance_conf.booster_angle) {
 				if (d->abs_proportional - d->balance_conf.booster_angle < d->balance_conf.booster_ramp) {
 					d->pid_value += (d->balance_conf.booster_current * SIGN(d->proportional)) *

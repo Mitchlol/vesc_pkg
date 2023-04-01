@@ -1,5 +1,5 @@
 /*
-    Copyright 2019 - 2023 Mitch Lustig
+    Copyright 2023 Mitch Lustig
 	Copyright 2022 Benjamin Vedder	benjamin@vedder.se
 
 	This file is part of the VESC firmware.
@@ -17,30 +17,22 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef REALTIMEDATA_H_
-#define REALTIMEDATA_H_
+
+#ifndef TURNTILT_H_
+#define TURNTILT_H_
 
 #include "../conf/datatypes.h"
+#include "../util/realtimedata.h"
 
-typedef enum {
-	OFF = 0,
-	HALF,
-	ON
-} SwitchState;
-
-// Runtime values read from elsewhere
 typedef struct{
-	float pitch_angle, last_pitch_angle, roll_angle, abs_roll_angle, abs_roll_angle_sin, last_gyro_y;
-	float gyro[3];
-	float duty_cycle, abs_duty_cycle;
-	float erpm, abs_erpm, avg_erpm;
-	float motor_current;
-	float motor_position;
-	float adc1, adc2;
-	SwitchState switch_state;
-	float direction, torque_direction;
-} RealtimeData;
+	// Computed config values
+	float step_size;
+	// State
+	float target, interpolated;
+} Turntilt;
 
-void realtimedata_update(RealtimeData *data, balance_config *balance_conf);
+void turntilt_configure(Turntilt *turntilt, balance_config *balance_conf);
+void turntilt_reset(Turntilt *turntilt);
+float turntilt_update(Turntilt *turntilt, RealtimeData *realtimedata, balance_config *balance_conf);
 
-#endif /* REALTIMEDATA_H_ */
+#endif /* TURNTILT_H_ */
