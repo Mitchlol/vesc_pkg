@@ -24,8 +24,10 @@
 #include "conf/confparser.h"
 #include "conf/confxml.h"
 #include "conf/buffer.h"
+#include "modifiers/untilt.h"
 #include "modifiers/torquetilt.h"
 #include "modifiers/turntilt.h"
+#include "modifiers/basictilt.h"
 #include "modifiers/speedtilt.h"
 #include "util/biquad.h"
 #include "util/realtimedata.h"
@@ -74,8 +76,10 @@ typedef struct {
 	balance_config balance_conf;
 
 	// Modifiers
+	Untilt untilt;
 	Turntilt turntilt;
 	Torquetilt torquetilt;
+	Basictilt basictilt;
 	Speedtilt speedtilt;
 
 	// Data
@@ -83,7 +87,6 @@ typedef struct {
 
 	// Computed config values
 	float loop_time_seconds;
-	float startup_step_size;
 	float tiltback_duty_step_size, tiltback_hv_step_size, tiltback_lv_step_size, tiltback_return_step_size;
 
 	// Rumtime state values
@@ -118,14 +121,15 @@ static void configure(data *d) {
 
 	d->motor_timeout_seconds = d->loop_time_seconds * 20; // Times 20 for a nice long grace period
 
-	d->startup_step_size = d->balance_conf.startup_speed / d->balance_conf.hertz;
 	d->tiltback_duty_step_size = d->balance_conf.tiltback_duty_speed / d->balance_conf.hertz;
 	d->tiltback_hv_step_size = d->balance_conf.tiltback_hv_speed / d->balance_conf.hertz;
 	d->tiltback_lv_step_size = d->balance_conf.tiltback_lv_speed / d->balance_conf.hertz;
 	d->tiltback_return_step_size = d->balance_conf.tiltback_return_speed / d->balance_conf.hertz;
 
+	untilt_configure(&d->untilt, &d->balance_conf);
 	turntilt_configure(&d->turntilt, &d->balance_conf);
 	torquetilt_configure(&d->torquetilt, &d->balance_conf);
+	basictilt_configure(&d->basictilt, &d->balance_conf);
 	speedtilt_configure(&d->speedtilt, &d->balance_conf);
 
 
@@ -163,11 +167,13 @@ static void reset_vars(data *d) {
 	d->d_pt1_lowpass_state = 0;
 	d->d_pt1_highpass_state = 0;
 	// Set values for startup
-	d->setpoint = d->realtimedata.pitch_angle;
-	d->setpoint_target_interpolated = d->realtimedata.pitch_angle;
+	d->setpoint = 0;
+	d->setpoint_target_interpolated = 0;
 	d->setpoint_target = 0;
+	untilt_reset(&d->untilt, &d->realtimedata);
 	turntilt_reset(&d->turntilt);
 	torquetilt_reset(&d->torquetilt);
+	basictilt_reset(&d->basictilt);
 	speedtilt_reset(&d->speedtilt);
 	d->setpointAdjustmentType = CENTERING;
 	d->yaw_setpoint = 0;
@@ -181,7 +187,8 @@ static void reset_vars(data *d) {
 static float get_setpoint_adjustment_step_size(data *d) {
 	switch(d->setpointAdjustmentType){
 		case (CENTERING):
-			return d->startup_step_size;
+			// NO-OP to be removed
+			return 0;
 		case (TILTBACK_DUTY):
 			return d->tiltback_duty_step_size;
 		case (TILTBACK_HV):
@@ -255,7 +262,7 @@ static bool check_faults(data *d, bool ignoreTimers){
 }
 
 static void calculate_setpoint_target(data *d) {
-	if (d->setpointAdjustmentType == CENTERING && d->setpoint_target_interpolated != d->setpoint_target) {
+	if (d->untilt.interpolated != 0) {
 		// Ignore tiltback during centering sequence
 		d->state = RUNNING;
 	} else if (d->realtimedata.abs_duty_cycle > d->balance_conf.tiltback_duty) {
@@ -425,6 +432,8 @@ static void balance_thd(void *arg) {
 			calculate_setpoint_target(d);
 			calculate_setpoint_interpolated(d);
 			d->setpoint = d->setpoint_target_interpolated;
+			d->setpoint += untilt_update(&d->untilt);
+			d->setpoint += basictilt_update(&d->basictilt, &d->realtimedata, &d->balance_conf);
 			d->setpoint += speedtilt_update(&d->speedtilt, &d->realtimedata, &d->balance_conf);
 			d->setpoint += turntilt_update(&d->turntilt, &d->realtimedata, &d->balance_conf);
 			d->setpoint += torquetilt_update(&d->torquetilt, &d->realtimedata, &d->balance_conf);

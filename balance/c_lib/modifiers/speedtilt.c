@@ -41,13 +41,6 @@ float speedtilt_update(Speedtilt *speedtilt, RealtimeData *realtimedata, balance
 	speedtilt_target = speedtilt->degrees_per_erpm * realtimedata->erpm;
 	speedtilt_target = fminf(fabsf(speedtilt_target), fabsf(balance_conf->tiltback_variable_max)) * SIGN(speedtilt_target);
 
-	// Constant tilt
-	if (realtimedata->erpm > balance_conf->tiltback_constant_erpm) {
-		speedtilt_target += balance_conf->tiltback_constant;
-	} else if (realtimedata->erpm < -balance_conf->tiltback_constant_erpm){
-		speedtilt_target += -balance_conf->tiltback_constant;
-	}
-
 	speedtilt->interpolated = STEP_TOWARDS(speedtilt->interpolated, speedtilt_target, speedtilt->step_size);
 
 	return speedtilt->interpolated;
