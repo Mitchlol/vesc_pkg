@@ -49,7 +49,6 @@ int32_t confparser_serialize_balance_config(uint8_t *buffer, const balance_confi
 	buffer_append_float32_auto(buffer, conf->startup_pitch_tolerance, &ind);
 	buffer_append_float32_auto(buffer, conf->startup_roll_tolerance, &ind);
 	buffer_append_float32_auto(buffer, conf->startup_speed, &ind);
-	buffer_append_float32_auto(buffer, conf->deadzone, &ind);
 	buffer[ind++] = conf->multi_esc;
 	buffer_append_float32_auto(buffer, conf->yaw_kp, &ind);
 	buffer_append_float32_auto(buffer, conf->yaw_ki, &ind);
@@ -126,7 +125,6 @@ bool confparser_deserialize_balance_config(const uint8_t *buffer, balance_config
 	conf->startup_pitch_tolerance = buffer_get_float32_auto(buffer, &ind);
 	conf->startup_roll_tolerance = buffer_get_float32_auto(buffer, &ind);
 	conf->startup_speed = buffer_get_float32_auto(buffer, &ind);
-	conf->deadzone = buffer_get_float32_auto(buffer, &ind);
 	conf->multi_esc = buffer[ind++];
 	conf->yaw_kp = buffer_get_float32_auto(buffer, &ind);
 	conf->yaw_ki = buffer_get_float32_auto(buffer, &ind);
@@ -196,7 +194,6 @@ void confparser_set_defaults_balance_config(balance_config *conf) {
 	conf->startup_pitch_tolerance = APPCONF_BALANCE_STARTUP_PITCH_TOLERANCE;
 	conf->startup_roll_tolerance = APPCONF_BALANCE_STARTUP_ROLL_TOLERANCE;
 	conf->startup_speed = APPCONF_BALANCE_STARTUP_SPEED;
-	conf->deadzone = APPCONF_BALANCE_DEADZONE;
 	conf->multi_esc = APPCONF_BALANCE_MULTI_ESC;
 	conf->yaw_kp = APPCONF_BALANCE_YAW_KP;
 	conf->yaw_ki = APPCONF_BALANCE_YAW_KI;

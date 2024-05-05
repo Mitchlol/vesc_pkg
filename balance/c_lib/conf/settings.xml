@@ -847,28 +847,6 @@ p, li { white-space: pre-wrap; }
             <suffix> °/s</suffix>
             <vTx>9</vTx>
         </startup_speed>
-        <deadzone>
-            <longName>Deadzone</longName>
-            <type>1</type>
-            <transmittable>1</transmittable>
-            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Deadzone disables balancing at center.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
-            <cDefine>APPCONF_BALANCE_DEADZONE</cDefine>
-            <editorDecimalsDouble>2</editorDecimalsDouble>
-            <editorScale>1</editorScale>
-            <editAsPercentage>0</editAsPercentage>
-            <maxDouble>5</maxDouble>
-            <minDouble>0</minDouble>
-            <showDisplay>0</showDisplay>
-            <stepDouble>0.01</stepDouble>
-            <valDouble>0</valDouble>
-            <vTxDoubleScale>1000</vTxDoubleScale>
-            <suffix> °</suffix>
-            <vTx>9</vTx>
-        </deadzone>
         <multi_esc>
             <longName>Multiple VESCs Over CAN</longName>
             <type>5</type>
@@ -1301,7 +1279,7 @@ p, li { white-space: pre-wrap; }
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Min angle threshold to apply turntilt. Similar to a deadzone, except after reaching the angle, it will apply as if it started from 0.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Min angle threshold to apply turntilt.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
             <cDefine>APPCONF_BALANCE_TURNTILT_START_ANGLE</cDefine>
             <editorDecimalsDouble>1</editorDecimalsDouble>
             <editorScale>1</editorScale>
@@ -1438,7 +1416,6 @@ p, li { white-space: pre-wrap; }
         <ser>startup_pitch_tolerance</ser>
         <ser>startup_roll_tolerance</ser>
         <ser>startup_speed</ser>
-        <ser>deadzone</ser>
         <ser>multi_esc</ser>
         <ser>yaw_kp</ser>
         <ser>yaw_ki</ser>
@@ -1486,8 +1463,6 @@ p, li { white-space: pre-wrap; }
                     <param>ki_limit</param>
                     <param>kd_pt1_lowpass_frequency</param>
                     <param>kd_pt1_highpass_frequency</param>
-                    <param>::sep::Experimental</param>
-                    <param>deadzone</param>
                 </subgroupParams>
             </subgroup>
             <subgroup>

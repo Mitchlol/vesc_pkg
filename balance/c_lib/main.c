@@ -311,20 +311,6 @@ static void calculate_setpoint_interpolated(data *d) {
 	}
 }
 
-static float apply_deadzone(data *d, float error){
-	if (d->balance_conf.deadzone == 0) {
-		return error;
-	}
-
-	if (error < d->balance_conf.deadzone && error > -d->balance_conf.deadzone) {
-		return 0;
-	} else if(error > d->balance_conf.deadzone) {
-		return error - d->balance_conf.deadzone;
-	} else {
-		return error + d->balance_conf.deadzone;
-	}
-}
-
 static void brake(data *d) {
 	// Brake timeout logic
 	if (d->balance_conf.brake_timeout > 0 && (d->realtimedata.abs_erpm > 1 || d->brake_timeout == 0)) {
@@ -440,11 +426,6 @@ static void balance_thd(void *arg) {
 
 			// Do PID maths
 			d->proportional = d->setpoint - d->realtimedata.pitch_angle;
-
-			// Apply deadzone
-			d->proportional = apply_deadzone(d, d->proportional);
-
-			// Resume real PID maths
 			d->integral = d->integral + d->proportional;
 			d->derivative = d->realtimedata.last_pitch_angle - d->realtimedata.pitch_angle;
 
