@@ -483,16 +483,6 @@ static void balance_thd(void *arg) {
 			d->abs_proportional = fabsf(d->proportional);
 			d->last_proportional = d->proportional;
 
-			// Apply Booster
-			if (d->abs_proportional > d->balance_conf.booster_angle) {
-				if (d->abs_proportional - d->balance_conf.booster_angle < d->balance_conf.booster_ramp) {
-					d->pid_value += (d->balance_conf.booster_current * SIGN(d->proportional)) *
-							((d->abs_proportional - d->balance_conf.booster_angle) / d->balance_conf.booster_ramp);
-				} else {
-					d->pid_value += d->balance_conf.booster_current * SIGN(d->proportional);
-				}
-			}
-
 			if (d->balance_conf.multi_esc) {
 				// Calculate setpoint
 				if (d->realtimedata.abs_duty_cycle < .02) {

@@ -62,9 +62,6 @@ int32_t confparser_serialize_balance_config(uint8_t *buffer, const balance_confi
 	buffer_append_float32_auto(buffer, conf->ki_limit, &ind);
 	buffer_append_uint16(buffer, conf->kd_pt1_lowpass_frequency, &ind);
 	buffer_append_uint16(buffer, conf->kd_pt1_highpass_frequency, &ind);
-	buffer_append_float32_auto(buffer, conf->booster_angle, &ind);
-	buffer_append_float32_auto(buffer, conf->booster_ramp, &ind);
-	buffer_append_float32_auto(buffer, conf->booster_current, &ind);
 	buffer_append_float32_auto(buffer, conf->torquetilt_start_current, &ind);
 	buffer_append_float32_auto(buffer, conf->torquetilt_angle_limit, &ind);
 	buffer_append_float32_auto(buffer, conf->torquetilt_on_speed, &ind);
@@ -142,9 +139,6 @@ bool confparser_deserialize_balance_config(const uint8_t *buffer, balance_config
 	conf->ki_limit = buffer_get_float32_auto(buffer, &ind);
 	conf->kd_pt1_lowpass_frequency = buffer_get_uint16(buffer, &ind);
 	conf->kd_pt1_highpass_frequency = buffer_get_uint16(buffer, &ind);
-	conf->booster_angle = buffer_get_float32_auto(buffer, &ind);
-	conf->booster_ramp = buffer_get_float32_auto(buffer, &ind);
-	conf->booster_current = buffer_get_float32_auto(buffer, &ind);
 	conf->torquetilt_start_current = buffer_get_float32_auto(buffer, &ind);
 	conf->torquetilt_angle_limit = buffer_get_float32_auto(buffer, &ind);
 	conf->torquetilt_on_speed = buffer_get_float32_auto(buffer, &ind);
@@ -215,9 +209,6 @@ void confparser_set_defaults_balance_config(balance_config *conf) {
 	conf->ki_limit = APPCONF_BALANCE_KI_LIMIT;
 	conf->kd_pt1_lowpass_frequency = APPCONF_BALANCE_KD_PT1_LOWPASS_FREQUENCY;
 	conf->kd_pt1_highpass_frequency = APPCONF_BALANCE_KD_PT1_HIGHPASS_FREQUENCY;
-	conf->booster_angle = APPCONF_BALANCE_BOOSTER_ANGLE;
-	conf->booster_ramp = APPCONF_BALANCE_BOOSTER_RAMP;
-	conf->booster_current = APPCONF_BALANCE_BOOSTER_CURRENT;
 	conf->torquetilt_start_current = APPCONF_BALANCE_TORQUETILT_START_CURRENT;
 	conf->torquetilt_angle_limit = APPCONF_BALANCE_TORQUETILT_ANGLE_LIMIT;
 	conf->torquetilt_on_speed = APPCONF_BALANCE_TORQUETILT_ON_SPEED;
