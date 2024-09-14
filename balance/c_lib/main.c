@@ -401,7 +401,7 @@ static void balance_thd(void *arg) {
 				brake(d);
 				if (VESC_IF->imu_startup_done()) {
 					reset_vars(d);
-					d->state = FAULT_STARTUP; // Trigger a fault so we need to meet start conditions to start
+					d->state = FAULT_STARTUP; // Trigger a fault so we need to meet restart conditions to start
 				}
 				break;
 
